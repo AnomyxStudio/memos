@@ -1,0 +1,11 @@
+{
+  "$schema": "https://railway.com/railway.schema.json",
+  "build": {
+    "builder": "DOCKERFILE",
+    "dockerfilePath": "Dockerfile.railway"
+  },
+  "deploy": {
+    "startCommand": "/bin/sh -c \"exec /usr/local/memos/entrypoint.sh /usr/local/memos/memos --port $PORT\"",
+    "healthcheckPath": "/healthz"
+  }
+}

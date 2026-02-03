@@ -1,0 +1,57 @@
+# syntax=docker/dockerfile:1.7
+
+FROM --platform=$BUILDPLATFORM node:20-alpine AS frontend
+WORKDIR /app
+
+RUN corepack enable
+
+COPY web/package.json web/pnpm-lock.yaml ./web/
+RUN cd web && corepack prepare pnpm@9 --activate && pnpm install --frozen-lockfile
+
+COPY web ./web
+RUN mkdir -p /app/server/router/frontend
+RUN cd web && pnpm release
+
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS backend
+WORKDIR /app
+
+RUN apk add --no-cache git ca-certificates
+
+COPY go.mod go.sum ./
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
+COPY . .
+COPY --from=frontend /app/server/router/frontend/dist ./server/router/frontend/dist
+
+ARG TARGETOS TARGETARCH VERSION COMMIT
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build \
+      -trimpath \
+      -ldflags="-s -w -extldflags '-static'" \
+      -tags netgo,osusergo \
+      -o /usr/local/memos/memos \
+      ./cmd/memos
+
+FROM alpine:3.21 AS runtime
+
+RUN apk add --no-cache tzdata ca-certificates su-exec && \
+    addgroup -g 10001 -S nonroot && \
+    adduser -u 10001 -S -G nonroot -h /var/opt/memos nonroot && \
+    mkdir -p /var/opt/memos /usr/local/memos && \
+    chown -R nonroot:nonroot /var/opt/memos
+
+COPY --from=backend /usr/local/memos/memos /usr/local/memos/memos
+COPY --from=backend --chmod=755 /app/scripts/entrypoint.sh /usr/local/memos/entrypoint.sh
+
+USER root
+WORKDIR /var/opt/memos
+VOLUME /var/opt/memos
+
+ENV TZ="UTC"
+
+EXPOSE 8081
+
+ENTRYPOINT ["/usr/local/memos/entrypoint.sh", "/usr/local/memos/memos"]
