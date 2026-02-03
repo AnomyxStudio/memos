@@ -18,16 +18,13 @@ WORKDIR /app
 RUN apk add --no-cache git ca-certificates
 
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
+RUN go mod download
 
 COPY . .
 COPY --from=frontend /app/server/router/frontend/dist ./server/router/frontend/dist
 
 ARG TARGETOS TARGETARCH VERSION COMMIT
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build \
       -trimpath \
       -ldflags="-s -w -extldflags '-static'" \
@@ -48,7 +45,6 @@ COPY --from=backend --chmod=755 /app/scripts/entrypoint.sh /usr/local/memos/entr
 
 USER root
 WORKDIR /var/opt/memos
-VOLUME /var/opt/memos
 
 ENV TZ="UTC"
 
