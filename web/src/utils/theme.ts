@@ -7,9 +7,10 @@ import whitewallThemeContent from "../themes/whitewall.css?raw";
 // Types and Constants
 // ============================================================================
 
-const VALID_THEMES = ["system", "default", "default-dark", "midnight", "paper", "whitewall"] as const;
+const BUILTIN_THEMES = ["system", "default", "default-dark", "midnight", "paper", "whitewall"] as const;
 
-export type Theme = (typeof VALID_THEMES)[number];
+type BuiltinTheme = (typeof BUILTIN_THEMES)[number];
+export type Theme = BuiltinTheme | (string & {});
 export type ResolvedTheme = Exclude<Theme, "system">;
 
 export interface ThemeOption {
@@ -20,7 +21,7 @@ export interface ThemeOption {
 const STORAGE_KEY = "memos-theme";
 const STYLE_ELEMENT_ID = "instance-theme";
 
-const THEME_CONTENT: Record<ResolvedTheme, string | null> = {
+const BUILTIN_THEME_CONTENT: Record<string, string | null> = {
   default: null,
   "default-dark": defaultDarkThemeContent,
   midnight: midnightThemeContent,
@@ -28,7 +29,43 @@ const THEME_CONTENT: Record<ResolvedTheme, string | null> = {
   whitewall: whitewallThemeContent,
 };
 
-export const THEME_OPTIONS: ThemeOption[] = [
+const TWEAKCN_THEME_GLOB = import.meta.glob("../themes/tweakcn/*.css", { as: "raw", eager: true });
+
+const RESERVED_THEME_NAMES = new Set(Object.keys(BUILTIN_THEME_CONTENT).concat(["system"]));
+
+const toTitleCase = (value: string): string => {
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
+const getThemeNameFromPath = (path: string): string | null => {
+  const parts = path.split("/");
+  const file = parts[parts.length - 1];
+  if (!file || !file.endsWith(".css")) {
+    return null;
+  }
+  return file.slice(0, -".css".length);
+};
+
+const TWEAKCN_THEME_CONTENT: Record<string, string> = {};
+
+for (const [path, css] of Object.entries(TWEAKCN_THEME_GLOB)) {
+  const name = getThemeNameFromPath(path);
+  if (!name || RESERVED_THEME_NAMES.has(name)) {
+    continue;
+  }
+  TWEAKCN_THEME_CONTENT[name] = css as string;
+}
+
+const THEME_CONTENT: Record<string, string | null> = {
+  ...BUILTIN_THEME_CONTENT,
+  ...TWEAKCN_THEME_CONTENT,
+};
+
+const VALID_THEMES = new Set<string>(["system", ...Object.keys(THEME_CONTENT)]);
+
+const BUILTIN_THEME_OPTIONS: ThemeOption[] = [
   { value: "system", label: "Sync with system" },
   { value: "default", label: "Light" },
   { value: "default-dark", label: "Dark" },
@@ -36,6 +73,15 @@ export const THEME_OPTIONS: ThemeOption[] = [
   { value: "paper", label: "Paper" },
   { value: "whitewall", label: "Whitewall" },
 ];
+
+const TWEAKCN_THEME_OPTIONS: ThemeOption[] = Object.keys(TWEAKCN_THEME_CONTENT)
+  .sort((a, b) => a.localeCompare(b))
+  .map((name) => ({
+    value: name,
+    label: `TweakCN: ${toTitleCase(name)}`,
+  }));
+
+export const THEME_OPTIONS: ThemeOption[] = [...BUILTIN_THEME_OPTIONS, ...TWEAKCN_THEME_OPTIONS];
 
 // ============================================================================
 // Theme Validation and Detection
@@ -46,7 +92,7 @@ export const THEME_OPTIONS: ThemeOption[] = [
  * Falls back to "default" for invalid themes.
  */
 const validateTheme = (theme: string): Theme => {
-  return VALID_THEMES.includes(theme as Theme) ? (theme as Theme) : "default";
+  return VALID_THEMES.has(theme) ? (theme as Theme) : "default";
 };
 
 /**
@@ -80,7 +126,7 @@ export const resolveTheme = (theme: string): ResolvedTheme => {
 const getStoredTheme = (): Theme | null => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored && VALID_THEMES.includes(stored as Theme) ? (stored as Theme) : null;
+    return stored && VALID_THEMES.has(stored) ? (stored as Theme) : null;
   } catch {
     return null;
   }
@@ -118,7 +164,7 @@ export const getInitialTheme = (): Theme => {
  */
 export const getThemeWithFallback = (userTheme?: string): Theme => {
   // Priority 1: User setting
-  if (userTheme && VALID_THEMES.includes(userTheme as Theme)) {
+  if (userTheme && VALID_THEMES.has(userTheme)) {
     return userTheme as Theme;
   }
 
