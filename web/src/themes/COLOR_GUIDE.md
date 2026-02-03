@@ -284,7 +284,7 @@ The application uses a structured z-index hierarchy to ensure proper layering of
 <Dialog>
   <DialogContent>
     <Select>
-      <SelectContent className="z-[60]">
+      <SelectContent className="z-60">
         {" "}
         {/* Higher than dialog */}
         <SelectItem>Option 1</SelectItem>
