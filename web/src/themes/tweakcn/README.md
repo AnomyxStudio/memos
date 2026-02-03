@@ -5,10 +5,21 @@ Place imported theme CSS files in this folder to make them available in the them
 Quick start (from `web/`):
 
 ```bash
-bun tweakcn:import --name "My Theme" --in /path/to/theme.css
+pnpm tweakcn:import --name "My Theme" --in /path/to/theme.css
 ```
 
-The importer expects:
+Install directly from a TweakCN/shadcn registry URL:
+
+```bash
+pnpm tweakcn:add https://tweakcn.com/r/themes/claude.json
+```
+
+The importer accepts either:
+
+- Theme JSON (from TweakCN/shadcn registry), or
+- Raw CSS with `:root` variables.
+
+For CSS input, it expects:
 
 - A `:root { ... }` block with CSS variables.
 - An optional `.dark { ... }` block for a separate dark variant.

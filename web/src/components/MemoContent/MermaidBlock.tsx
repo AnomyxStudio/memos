@@ -2,7 +2,13 @@ import mermaid from "mermaid";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { getThemeWithFallback, resolveTheme, setupSystemThemeListener } from "@/utils/theme";
+import {
+  getThemePreferencesWithFallback,
+  getThemeWithFallback,
+  isDarkTheme,
+  resolveTheme,
+  setupSystemThemeListener,
+} from "@/utils/theme";
 import { extractCodeContent } from "./utils";
 
 interface MermaidBlockProps {
@@ -11,7 +17,7 @@ interface MermaidBlockProps {
 }
 
 const getMermaidTheme = (appTheme: string): "default" | "dark" => {
-  return appTheme === "default-dark" ? "dark" : "default";
+  return isDarkTheme(appTheme) ? "dark" : "default";
 };
 
 export const MermaidBlock = ({ children, className }: MermaidBlockProps) => {
@@ -26,9 +32,16 @@ export const MermaidBlock = ({ children, className }: MermaidBlockProps) => {
   // Get theme preference (reactive via AuthContext)
   // Falls back to localStorage or system preference if no user setting
   const themePreference = getThemeWithFallback(userGeneralSetting?.theme);
+  const preferences = useMemo(
+    () => getThemePreferencesWithFallback(userGeneralSetting?.themeLight, userGeneralSetting?.themeDark),
+    [userGeneralSetting?.themeLight, userGeneralSetting?.themeDark],
+  );
 
   // Resolve theme to actual value (handles "system" theme + system theme changes)
-  const currentTheme = useMemo(() => resolveTheme(themePreference), [themePreference, systemThemeChange]);
+  const currentTheme = useMemo(
+    () => resolveTheme(themePreference, preferences),
+    [themePreference, preferences, systemThemeChange],
+  );
 
   // Listen for OS theme changes when using "system" theme preference
   useEffect(() => {

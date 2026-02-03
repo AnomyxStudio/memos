@@ -1,6 +1,11 @@
 import { useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getThemeWithFallback, loadTheme, setupSystemThemeListener } from "@/utils/theme";
+import {
+  getThemePreferencesWithFallback,
+  getThemeWithFallback,
+  loadTheme,
+  setupSystemThemeListener,
+} from "@/utils/theme";
 
 /**
  * Hook that reactively applies user theme preference.
@@ -15,12 +20,24 @@ export const useUserTheme = () => {
       return;
     }
     const theme = getThemeWithFallback(userGeneralSetting.theme);
-    loadTheme(theme);
-  }, [userGeneralSetting?.theme]);
+    const preferences = getThemePreferencesWithFallback(
+      userGeneralSetting.themeLight,
+      userGeneralSetting.themeDark,
+    );
+    loadTheme(theme, preferences);
+  }, [
+    userGeneralSetting?.theme,
+    userGeneralSetting?.themeLight,
+    userGeneralSetting?.themeDark,
+  ]);
 
   // Listen for system theme changes when using "system" theme
   useEffect(() => {
     const theme = getThemeWithFallback(userGeneralSetting?.theme);
+    const preferences = getThemePreferencesWithFallback(
+      userGeneralSetting?.themeLight,
+      userGeneralSetting?.themeDark,
+    );
 
     // Only set up listener if theme is "system"
     if (theme !== "system") {
@@ -29,9 +46,13 @@ export const useUserTheme = () => {
 
     // Set up listener for OS theme preference changes
     const cleanup = setupSystemThemeListener(() => {
-      loadTheme(theme);
+      loadTheme(theme, preferences);
     });
 
     return cleanup;
-  }, [userGeneralSetting?.theme]);
+  }, [
+    userGeneralSetting?.theme,
+    userGeneralSetting?.themeLight,
+    userGeneralSetting?.themeDark,
+  ]);
 };

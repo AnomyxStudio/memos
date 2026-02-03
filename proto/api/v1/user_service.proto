@@ -396,6 +396,10 @@ message UserSetting {
     // This references a CSS file in the web/public/themes/ directory.
     // If not set, the default theme will be used.
     string theme = 4 [(google.api.field_behavior) = OPTIONAL];
+    // The preferred theme for light mode when theme is set to "system".
+    string theme_light = 5 [(google.api.field_behavior) = OPTIONAL];
+    // The preferred theme for dark mode when theme is set to "system".
+    string theme_dark = 6 [(google.api.field_behavior) = OPTIONAL];
   }
 
   // User webhooks configuration.

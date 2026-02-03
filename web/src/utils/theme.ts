@@ -7,7 +7,14 @@ import whitewallThemeContent from "../themes/whitewall.css?raw";
 // Types and Constants
 // ============================================================================
 
-const BUILTIN_THEMES = ["system", "default", "default-dark", "midnight", "paper", "whitewall"] as const;
+const BUILTIN_THEMES = [
+  "system",
+  "default",
+  "default-dark",
+  "midnight",
+  "paper",
+  "whitewall",
+] as const;
 
 type BuiltinTheme = (typeof BUILTIN_THEMES)[number];
 export type Theme = BuiltinTheme | (string & {});
@@ -19,6 +26,8 @@ export interface ThemeOption {
 }
 
 const STORAGE_KEY = "memos-theme";
+const STORAGE_LIGHT_KEY = "memos-theme-light";
+const STORAGE_DARK_KEY = "memos-theme-dark";
 const STYLE_ELEMENT_ID = "instance-theme";
 
 const BUILTIN_THEME_CONTENT: Record<string, string | null> = {
@@ -29,9 +38,14 @@ const BUILTIN_THEME_CONTENT: Record<string, string | null> = {
   whitewall: whitewallThemeContent,
 };
 
-const TWEAKCN_THEME_GLOB = import.meta.glob("../themes/tweakcn/*.css", { as: "raw", eager: true });
+const TWEAKCN_THEME_GLOB = import.meta.glob("../themes/tweakcn/*.css", {
+  as: "raw",
+  eager: true,
+});
 
-const RESERVED_THEME_NAMES = new Set(Object.keys(BUILTIN_THEME_CONTENT).concat(["system"]));
+const RESERVED_THEME_NAMES = new Set(
+  Object.keys(BUILTIN_THEME_CONTENT).concat(["system"]),
+);
 
 const toTitleCase = (value: string): string => {
   return value
@@ -64,6 +78,7 @@ const THEME_CONTENT: Record<string, string | null> = {
 };
 
 const VALID_THEMES = new Set<string>(["system", ...Object.keys(THEME_CONTENT)]);
+const DARK_THEME_NAMES = new Set(["default-dark", "midnight"]);
 
 const BUILTIN_THEME_OPTIONS: ThemeOption[] = [
   { value: "system", label: "Sync with system" },
@@ -78,10 +93,18 @@ const TWEAKCN_THEME_OPTIONS: ThemeOption[] = Object.keys(TWEAKCN_THEME_CONTENT)
   .sort((a, b) => a.localeCompare(b))
   .map((name) => ({
     value: name,
-    label: `TweakCN: ${toTitleCase(name)}`,
+    label: `${toTitleCase(name)}`,
   }));
 
-export const THEME_OPTIONS: ThemeOption[] = [...BUILTIN_THEME_OPTIONS, ...TWEAKCN_THEME_OPTIONS];
+export const THEME_OPTIONS: ThemeOption[] = [
+  ...BUILTIN_THEME_OPTIONS,
+  ...TWEAKCN_THEME_OPTIONS,
+];
+
+export interface ThemePreferences {
+  light?: Theme;
+  dark?: Theme;
+}
 
 // ============================================================================
 // Theme Validation and Detection
@@ -95,12 +118,28 @@ const validateTheme = (theme: string): Theme => {
   return VALID_THEMES.has(theme) ? (theme as Theme) : "default";
 };
 
+const normalizePreference = (theme?: string): ResolvedTheme | null => {
+  if (!theme) {
+    return null;
+  }
+  if (!VALID_THEMES.has(theme)) {
+    return null;
+  }
+  if (theme === "system") {
+    return null;
+  }
+  return theme as ResolvedTheme;
+};
+
 /**
  * Detects the system's preferred color scheme.
  * @returns "default-dark" for dark mode, "default" for light mode
  */
 export const getSystemTheme = (): ResolvedTheme => {
-  if (typeof window !== "undefined" && window.matchMedia?.("(prefers-color-scheme: dark)").matches) {
+  if (
+    typeof window !== "undefined" &&
+    window.matchMedia?.("(prefers-color-scheme: dark)").matches
+  ) {
     return "default-dark";
   }
   return "default";
@@ -110,9 +149,26 @@ export const getSystemTheme = (): ResolvedTheme => {
  * Resolves "system" theme to the actual theme based on OS preference.
  * Other themes are returned as-is after validation.
  */
-export const resolveTheme = (theme: string): ResolvedTheme => {
+export const resolveTheme = (
+  theme: string,
+  preferences?: ThemePreferences,
+): ResolvedTheme => {
   const validTheme = validateTheme(theme);
-  return validTheme === "system" ? getSystemTheme() : validTheme;
+  if (validTheme !== "system") {
+    return validTheme;
+  }
+
+  const systemTheme = getSystemTheme();
+  const fallback = systemTheme === "default-dark" ? "dark" : "light";
+  const preferredTheme = normalizePreference(preferences?.[fallback]);
+  if (preferredTheme && VALID_THEMES.has(preferredTheme)) {
+    return preferredTheme;
+  }
+  return systemTheme;
+};
+
+export const isDarkTheme = (theme: string): boolean => {
+  return theme.endsWith("-dark") || DARK_THEME_NAMES.has(theme);
 };
 
 // ============================================================================
@@ -132,6 +188,30 @@ const getStoredTheme = (): Theme | null => {
   }
 };
 
+const getStoredThemePreferences = (): ThemePreferences => {
+  try {
+    const light = normalizePreference(localStorage.getItem(STORAGE_LIGHT_KEY) || undefined);
+    const dark = normalizePreference(localStorage.getItem(STORAGE_DARK_KEY) || undefined);
+    return {
+      light: light ?? undefined,
+      dark: dark ?? undefined,
+    };
+  } catch {
+    return {};
+  }
+};
+
+export const getThemePreferencesWithFallback = (
+  light?: string,
+  dark?: string,
+): ThemePreferences => {
+  const stored = getStoredThemePreferences();
+  return {
+    light: normalizePreference(light) ?? stored.light,
+    dark: normalizePreference(dark) ?? stored.dark,
+  };
+};
+
 /**
  * Safely stores the theme to localStorage.
  */
@@ -141,6 +221,25 @@ const setStoredTheme = (theme: Theme): void => {
   } catch {
     // localStorage might not be available (SSR, private browsing, etc.)
   }
+};
+
+const setStoredThemePreference = (key: string, value?: string | null): void => {
+  try {
+    if (!value) {
+      localStorage.removeItem(key);
+      return;
+    }
+    localStorage.setItem(key, value);
+  } catch {
+    // localStorage might not be available (SSR, private browsing, etc.)
+  }
+};
+
+const setStoredThemePreferences = (preferences: ThemePreferences): void => {
+  const light = normalizePreference(preferences.light);
+  const dark = normalizePreference(preferences.dark);
+  setStoredThemePreference(STORAGE_LIGHT_KEY, light ?? null);
+  setStoredThemePreference(STORAGE_DARK_KEY, dark ?? null);
 };
 
 // ============================================================================
@@ -230,13 +329,20 @@ const setThemeAttribute = (theme: ResolvedTheme): void => {
  * 4. Sets data-theme attribute
  * 5. Persists to localStorage
  */
-export const loadTheme = (themeName: string): void => {
+export const loadTheme = (
+  themeName: string,
+  preferences?: ThemePreferences,
+): void => {
   const validTheme = validateTheme(themeName);
-  const resolvedTheme = resolveTheme(validTheme);
+  const resolvedPreferences = preferences ?? getStoredThemePreferences();
+  const resolvedTheme = resolveTheme(validTheme, resolvedPreferences);
 
   injectThemeStyle(resolvedTheme);
   setThemeAttribute(resolvedTheme);
   setStoredTheme(validTheme); // Store original theme preference (not resolved)
+  if (preferences) {
+    setStoredThemePreferences(resolvedPreferences);
+  }
 };
 
 /**
@@ -245,7 +351,7 @@ export const loadTheme = (themeName: string): void => {
  */
 export const applyThemeEarly = (): void => {
   const theme = getInitialTheme();
-  loadTheme(theme);
+  loadTheme(theme, getStoredThemePreferences());
 };
 
 // ============================================================================
@@ -259,7 +365,9 @@ export const applyThemeEarly = (): void => {
  * @param onThemeChange - Callback invoked when system theme changes
  * @returns Cleanup function to remove the listener
  */
-export const setupSystemThemeListener = (onThemeChange: () => void): (() => void) => {
+export const setupSystemThemeListener = (
+  onThemeChange: () => void,
+): () => void => {
   // Guard against SSR
   if (typeof window === "undefined" || !window.matchMedia) {
     return () => {};

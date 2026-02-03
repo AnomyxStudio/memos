@@ -8,7 +8,8 @@
     "lint": "tsc --noEmit --skipLibCheck && biome check src",
     "lint:fix": "biome check --write src",
     "format": "biome format --write src",
-    "tweakcn:import": "node ./scripts/tweakcn-import.mjs"
+    "tweakcn:import": "node ./scripts/tweakcn-import.mjs",
+    "tweakcn:add": "node ./scripts/tweakcn-import.mjs"
   },
   "dependencies": {
     "@connectrpc/connect": "^2.1.1",

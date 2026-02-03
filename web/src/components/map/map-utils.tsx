@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import ReactDOMServer from "react-dom/server";
 import { TileLayer } from "react-leaflet";
 import { useAuth } from "@/contexts/AuthContext";
-import { resolveTheme } from "@/utils/theme";
+import { getThemePreferencesWithFallback, isDarkTheme, resolveTheme } from "@/utils/theme";
 
 const TILE_URLS = {
   light: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -13,7 +13,14 @@ const TILE_URLS = {
 
 export const ThemedTileLayer = () => {
   const { userGeneralSetting } = useAuth();
-  const isDark = useMemo(() => resolveTheme(userGeneralSetting?.theme || "system").includes("dark"), [userGeneralSetting?.theme]);
+  const preferences = useMemo(
+    () => getThemePreferencesWithFallback(userGeneralSetting?.themeLight, userGeneralSetting?.themeDark),
+    [userGeneralSetting?.themeLight, userGeneralSetting?.themeDark],
+  );
+  const isDark = useMemo(
+    () => isDarkTheme(resolveTheme(userGeneralSetting?.theme || "system", preferences)),
+    [userGeneralSetting?.theme, preferences],
+  );
   return <TileLayer url={isDark ? TILE_URLS.dark : TILE_URLS.light} />;
 };
 

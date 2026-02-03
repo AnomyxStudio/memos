@@ -6,6 +6,8 @@ interface ThemeSelectProps {
   value?: string;
   onValueChange?: (theme: string) => void;
   className?: string;
+  includeSystem?: boolean;
+  applyThemeOnChange?: boolean;
 }
 
 const THEME_ICONS: Record<string, JSX.Element> = {
@@ -17,12 +19,21 @@ const THEME_ICONS: Record<string, JSX.Element> = {
   whitewall: <Wallpaper className="w-4 h-4" />,
 };
 
-const ThemeSelect = ({ value, onValueChange, className }: ThemeSelectProps = {}) => {
+const ThemeSelect = ({
+  value,
+  onValueChange,
+  className,
+  includeSystem = true,
+  applyThemeOnChange = true,
+}: ThemeSelectProps = {}) => {
   const currentTheme = value || "system";
+  const options = includeSystem ? THEME_OPTIONS : THEME_OPTIONS.filter((option) => option.value !== "system");
 
   const handleThemeChange = (newTheme: string) => {
     // Apply theme globally immediately
-    loadTheme(newTheme);
+    if (applyThemeOnChange) {
+      loadTheme(newTheme);
+    }
     // Also notify parent component if callback is provided
     if (onValueChange) {
       onValueChange(newTheme);
@@ -37,10 +48,10 @@ const ThemeSelect = ({ value, onValueChange, className }: ThemeSelectProps = {})
         </div>
       </SelectTrigger>
       <SelectContent>
-        {THEME_OPTIONS.map((option) => (
+        {options.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             <div className="flex items-center gap-2">
-              {THEME_ICONS[option.value]}
+              {THEME_ICONS[option.value] ?? <Palette className="w-4 h-4" />}
               <span>{option.label}</span>
             </div>
           </SelectItem>

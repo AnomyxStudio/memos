@@ -6,7 +6,7 @@ import { Visibility } from "@/types/proto/api/v1/memo_service_pb";
 import { UserSetting_GeneralSetting, UserSetting_GeneralSettingSchema } from "@/types/proto/api/v1/user_service_pb";
 import { loadLocale, useTranslate } from "@/utils/i18n";
 import { convertVisibilityFromString, convertVisibilityToString } from "@/utils/memo";
-import { loadTheme } from "@/utils/theme";
+import { getThemePreferencesWithFallback, loadTheme } from "@/utils/theme";
 import LocaleSelect from "../LocaleSelect";
 import ThemeSelect from "../ThemeSelect";
 import VisibilityIcon from "../VisibilityIcon";
@@ -46,11 +46,38 @@ const PreferencesSection = () => {
   };
 
   const handleThemeChange = async (theme: string) => {
+    const preferences = getThemePreferencesWithFallback(setting.themeLight, setting.themeDark);
     // Apply theme immediately for instant UI feedback
-    loadTheme(theme);
+    loadTheme(theme, preferences);
     // Persist to user settings
     updateUserGeneralSetting(
       { generalSetting: { theme }, updateMask: ["theme"] },
+      {
+        onSuccess: () => {
+          refetchSettings();
+        },
+      },
+    );
+  };
+
+  const handleSystemLightThemeChange = async (themeLight: string) => {
+    const preferences = getThemePreferencesWithFallback(themeLight, setting.themeDark);
+    loadTheme(setting.theme || "system", preferences);
+    updateUserGeneralSetting(
+      { generalSetting: { themeLight }, updateMask: ["theme_light"] },
+      {
+        onSuccess: () => {
+          refetchSettings();
+        },
+      },
+    );
+  };
+
+  const handleSystemDarkThemeChange = async (themeDark: string) => {
+    const preferences = getThemePreferencesWithFallback(setting.themeLight, themeDark);
+    loadTheme(setting.theme || "system", preferences);
+    updateUserGeneralSetting(
+      { generalSetting: { themeDark }, updateMask: ["theme_dark"] },
       {
         onSuccess: () => {
           refetchSettings();
@@ -66,7 +93,12 @@ const PreferencesSection = () => {
       locale: "en",
       memoVisibility: "PRIVATE",
       theme: "system",
+      themeLight: "",
+      themeDark: "",
     });
+
+  const systemLightTheme = setting.themeLight || "default";
+  const systemDarkTheme = setting.themeDark || "default-dark";
 
   return (
     <SettingSection>
@@ -76,7 +108,23 @@ const PreferencesSection = () => {
         </SettingRow>
 
         <SettingRow label={t("setting.preference-section.theme")}>
-          <ThemeSelect value={setting.theme} onValueChange={handleThemeChange} />
+          <ThemeSelect value={setting.theme || "system"} applyThemeOnChange={false} onValueChange={handleThemeChange} />
+        </SettingRow>
+        <SettingRow label="System light theme" description='Used when Theme is set to "Sync with system".'>
+          <ThemeSelect
+            value={systemLightTheme}
+            includeSystem={false}
+            applyThemeOnChange={false}
+            onValueChange={handleSystemLightThemeChange}
+          />
+        </SettingRow>
+        <SettingRow label="System dark theme" description='Used when Theme is set to "Sync with system".'>
+          <ThemeSelect
+            value={systemDarkTheme}
+            includeSystem={false}
+            applyThemeOnChange={false}
+            onValueChange={handleSystemDarkThemeChange}
+          />
         </SettingRow>
       </SettingGroup>
 

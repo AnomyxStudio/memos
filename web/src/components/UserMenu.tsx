@@ -7,7 +7,7 @@ import { locales } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { Routes } from "@/router";
 import { getLocaleDisplayName, getLocaleWithFallback, loadLocale, useTranslate } from "@/utils/i18n";
-import { getThemeWithFallback, loadTheme, THEME_OPTIONS } from "@/utils/theme";
+import { getThemePreferencesWithFallback, getThemeWithFallback, loadTheme, THEME_OPTIONS } from "@/utils/theme";
 import UserAvatar from "./UserAvatar";
 import {
   DropdownMenu,
@@ -32,6 +32,7 @@ const UserMenu = (props: Props) => {
   const { mutate: updateUserGeneralSetting } = useUpdateUserGeneralSetting(currentUser?.name);
   const currentLocale = getLocaleWithFallback(userGeneralSetting?.locale);
   const currentTheme = getThemeWithFallback(userGeneralSetting?.theme);
+  const themePreferences = getThemePreferencesWithFallback(userGeneralSetting?.themeLight, userGeneralSetting?.themeDark);
 
   const handleLocaleChange = async (locale: Locale) => {
     if (!currentUser) return;
@@ -51,7 +52,7 @@ const UserMenu = (props: Props) => {
   const handleThemeChange = async (theme: string) => {
     if (!currentUser) return;
     // Apply theme immediately for instant UI feedback
-    loadTheme(theme);
+    loadTheme(theme, themePreferences);
     // Persist to user settings
     updateUserGeneralSetting(
       { generalSetting: { theme }, updateMask: ["theme"] },
@@ -70,7 +71,15 @@ const UserMenu = (props: Props) => {
     try {
       // Then clear user-specific localStorage items
       // Preserve app-wide settings (theme, locale, view preferences, tag view settings)
-      const keysToPreserve = ["memos-theme", "memos-locale", "memos-view-setting", "tag-view-as-tree", "tag-tree-auto-expand"];
+      const keysToPreserve = [
+        "memos-theme",
+        "memos-theme-light",
+        "memos-theme-dark",
+        "memos-locale",
+        "memos-view-setting",
+        "tag-view-as-tree",
+        "tag-tree-auto-expand",
+      ];
       const keysToRemove: string[] = [];
 
       for (let i = 0; i < localStorage.length; i++) {

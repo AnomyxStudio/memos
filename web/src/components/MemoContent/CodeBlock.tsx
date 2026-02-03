@@ -4,7 +4,7 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-import { getThemeWithFallback, resolveTheme } from "@/utils/theme";
+import { getThemePreferencesWithFallback, getThemeWithFallback, isDarkTheme, resolveTheme } from "@/utils/theme";
 import { MermaidBlock } from "./MermaidBlock";
 import type { ReactMarkdownProps } from "./markdown/types";
 import { extractCodeContent, extractLanguage } from "./utils";
@@ -35,8 +35,9 @@ export const CodeBlock = ({ children, className, node: _node, ...props }: CodeBl
   }
 
   const theme = getThemeWithFallback(userGeneralSetting?.theme);
-  const resolvedTheme = resolveTheme(theme);
-  const isDarkTheme = resolvedTheme.includes("dark");
+  const preferences = getThemePreferencesWithFallback(userGeneralSetting?.themeLight, userGeneralSetting?.themeDark);
+  const resolvedTheme = resolveTheme(theme, preferences);
+  const darkTheme = isDarkTheme(resolvedTheme);
 
   // Dynamically load highlight.js theme based on app theme
   useEffect(() => {
@@ -48,14 +49,14 @@ export const CodeBlock = ({ children, className, node: _node, ...props }: CodeBl
       }
 
       try {
-        const cssModule = isDarkTheme
+        const cssModule = darkTheme
           ? await import("highlight.js/styles/github-dark-dimmed.css?inline")
           : await import("highlight.js/styles/github.css?inline");
 
         // Create and inject the style
         const style = document.createElement("style");
         style.textContent = cssModule.default;
-        style.setAttribute("data-hljs-theme", isDarkTheme ? "dark" : "light");
+        style.setAttribute("data-hljs-theme", darkTheme ? "dark" : "light");
         document.head.appendChild(style);
       } catch (error) {
         console.warn("Failed to load highlight.js theme:", error);
@@ -63,7 +64,7 @@ export const CodeBlock = ({ children, className, node: _node, ...props }: CodeBl
     };
 
     dynamicImportStyle();
-  }, [resolvedTheme, isDarkTheme]);
+  }, [resolvedTheme, darkTheme]);
 
   // Highlight code using highlight.js
   const highlightedCode = useMemo(() => {

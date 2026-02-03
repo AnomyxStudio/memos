@@ -330,6 +330,8 @@ func getDefaultUserGeneralSetting() *v1pb.UserSetting_GeneralSetting {
 		Locale:         "en",
 		MemoVisibility: "PRIVATE",
 		Theme:          "",
+		ThemeLight:     "",
+		ThemeDark:      "",
 	}
 }
 
@@ -421,6 +423,8 @@ func (s *APIV1Service) UpdateUserSetting(ctx context.Context, request *v1pb.Upda
 		MemoVisibility: generalSetting.GetMemoVisibility(),
 		Locale:         generalSetting.GetLocale(),
 		Theme:          generalSetting.GetTheme(),
+		ThemeLight:     generalSetting.GetThemeLight(),
+		ThemeDark:      generalSetting.GetThemeDark(),
 	}
 
 	// Apply updates for fields specified in the update mask
@@ -431,6 +435,10 @@ func (s *APIV1Service) UpdateUserSetting(ctx context.Context, request *v1pb.Upda
 			updatedGeneral.MemoVisibility = incomingGeneral.MemoVisibility
 		case "theme":
 			updatedGeneral.Theme = incomingGeneral.Theme
+		case "theme_light":
+			updatedGeneral.ThemeLight = incomingGeneral.ThemeLight
+		case "theme_dark":
+			updatedGeneral.ThemeDark = incomingGeneral.ThemeDark
 		case "locale":
 			updatedGeneral.Locale = incomingGeneral.Locale
 		default:
@@ -1046,6 +1054,8 @@ func convertUserSettingFromStore(storeSetting *storepb.UserSetting, userID int32
 					Locale:         general.Locale,
 					MemoVisibility: general.MemoVisibility,
 					Theme:          general.Theme,
+					ThemeLight:     general.ThemeLight,
+					ThemeDark:      general.ThemeDark,
 				},
 			}
 		} else {
@@ -1094,6 +1104,8 @@ func convertUserSettingToStore(apiSetting *v1pb.UserSetting, userID int32, key s
 					Locale:         general.Locale,
 					MemoVisibility: general.MemoVisibility,
 					Theme:          general.Theme,
+					ThemeLight:     general.ThemeLight,
+					ThemeDark:      general.ThemeDark,
 				},
 			}
 		} else {

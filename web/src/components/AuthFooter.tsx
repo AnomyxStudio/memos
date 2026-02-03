@@ -27,7 +27,7 @@ const AuthFooter = ({ className }: Props) => {
   return (
     <div className={cn("mt-4 flex flex-row items-center justify-center w-full gap-2", className)}>
       <LocaleSelect value={currentLocale} onChange={handleLocaleChange} />
-      <ThemeSelect value={currentTheme} onValueChange={handleThemeChange} />
+      <ThemeSelect value={currentTheme} applyThemeOnChange={false} onValueChange={handleThemeChange} />
     </div>
   );
 };

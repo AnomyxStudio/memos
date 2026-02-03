@@ -41,6 +41,10 @@ message GeneralUserSetting {
   // The user's theme preference.
   // This references a CSS file in the web/public/themes/ directory.
   string theme = 3;
+  // The preferred theme for light mode when theme is set to "system".
+  string theme_light = 4;
+  // The preferred theme for dark mode when theme is set to "system".
+  string theme_dark = 5;
 }
 
 message RefreshTokensUserSetting {
