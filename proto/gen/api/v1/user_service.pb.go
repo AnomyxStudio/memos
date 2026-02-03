@@ -2398,7 +2398,11 @@ type UserSetting_GeneralSetting struct {
 	// The preferred theme of the user.
 	// This references a CSS file in the web/public/themes/ directory.
 	// If not set, the default theme will be used.
-	Theme         string `protobuf:"bytes,4,opt,name=theme,proto3" json:"theme,omitempty"`
+	Theme string `protobuf:"bytes,4,opt,name=theme,proto3" json:"theme,omitempty"`
+	// The preferred theme for light mode when theme is set to "system".
+	ThemeLight string `protobuf:"bytes,5,opt,name=theme_light,json=themeLight,proto3" json:"theme_light,omitempty"`
+	// The preferred theme for dark mode when theme is set to "system".
+	ThemeDark     string `protobuf:"bytes,6,opt,name=theme_dark,json=themeDark,proto3" json:"theme_dark,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2450,6 +2454,20 @@ func (x *UserSetting_GeneralSetting) GetMemoVisibility() string {
 func (x *UserSetting_GeneralSetting) GetTheme() string {
 	if x != nil {
 		return x.Theme
+	}
+	return ""
+}
+
+func (x *UserSetting_GeneralSetting) GetThemeLight() string {
+	if x != nil {
+		return x.ThemeLight
+	}
+	return ""
+}
+
+func (x *UserSetting_GeneralSetting) GetThemeDark() string {
+	if x != nil {
+		return x.ThemeDark
 	}
 	return ""
 }
@@ -2581,15 +2599,19 @@ const file_api_v1_user_service_proto_rawDesc = "" +
 	"\x11memos.api.v1/UserR\x04name\"\x19\n" +
 	"\x17ListAllUserStatsRequest\"I\n" +
 	"\x18ListAllUserStatsResponse\x12-\n" +
-	"\x05stats\x18\x01 \x03(\v2\x17.memos.api.v1.UserStatsR\x05stats\"\xb0\x04\n" +
+	"\x05stats\x18\x01 \x03(\v2\x17.memos.api.v1.UserStatsR\x05stats\"\xfb\x04\n" +
 	"\vUserSetting\x12\x17\n" +
 	"\x04name\x18\x01 \x01(\tB\x03\xe0A\bR\x04name\x12S\n" +
 	"\x0fgeneral_setting\x18\x02 \x01(\v2(.memos.api.v1.UserSetting.GeneralSettingH\x00R\x0egeneralSetting\x12V\n" +
-	"\x10webhooks_setting\x18\x05 \x01(\v2).memos.api.v1.UserSetting.WebhooksSettingH\x00R\x0fwebhooksSetting\x1av\n" +
+	"\x10webhooks_setting\x18\x05 \x01(\v2).memos.api.v1.UserSetting.WebhooksSettingH\x00R\x0fwebhooksSetting\x1a\xc0\x01\n" +
 	"\x0eGeneralSetting\x12\x1b\n" +
 	"\x06locale\x18\x01 \x01(\tB\x03\xe0A\x01R\x06locale\x12,\n" +
 	"\x0fmemo_visibility\x18\x03 \x01(\tB\x03\xe0A\x01R\x0ememoVisibility\x12\x19\n" +
-	"\x05theme\x18\x04 \x01(\tB\x03\xe0A\x01R\x05theme\x1aH\n" +
+	"\x05theme\x18\x04 \x01(\tB\x03\xe0A\x01R\x05theme\x12$\n" +
+	"\vtheme_light\x18\x05 \x01(\tB\x03\xe0A\x01R\n" +
+	"themeLight\x12\"\n" +
+	"\n" +
+	"theme_dark\x18\x06 \x01(\tB\x03\xe0A\x01R\tthemeDark\x1aH\n" +
 	"\x0fWebhooksSetting\x125\n" +
 	"\bwebhooks\x18\x01 \x03(\v2\x19.memos.api.v1.UserWebhookR\bwebhooks\"5\n" +
 	"\x03Key\x12\x13\n" +

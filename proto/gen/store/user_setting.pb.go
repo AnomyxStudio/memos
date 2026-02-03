@@ -239,7 +239,11 @@ type GeneralUserSetting struct {
 	MemoVisibility string `protobuf:"bytes,2,opt,name=memo_visibility,json=memoVisibility,proto3" json:"memo_visibility,omitempty"`
 	// The user's theme preference.
 	// This references a CSS file in the web/public/themes/ directory.
-	Theme         string `protobuf:"bytes,3,opt,name=theme,proto3" json:"theme,omitempty"`
+	Theme string `protobuf:"bytes,3,opt,name=theme,proto3" json:"theme,omitempty"`
+	// The preferred theme for light mode when theme is set to "system".
+	ThemeLight string `protobuf:"bytes,4,opt,name=theme_light,json=themeLight,proto3" json:"theme_light,omitempty"`
+	// The preferred theme for dark mode when theme is set to "system".
+	ThemeDark     string `protobuf:"bytes,5,opt,name=theme_dark,json=themeDark,proto3" json:"theme_dark,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -291,6 +295,20 @@ func (x *GeneralUserSetting) GetMemoVisibility() string {
 func (x *GeneralUserSetting) GetTheme() string {
 	if x != nil {
 		return x.Theme
+	}
+	return ""
+}
+
+func (x *GeneralUserSetting) GetThemeLight() string {
+	if x != nil {
+		return x.ThemeLight
+	}
+	return ""
+}
+
+func (x *GeneralUserSetting) GetThemeDark() string {
+	if x != nil {
+		return x.ThemeDark
 	}
 	return ""
 }
@@ -866,11 +884,15 @@ const file_store_user_setting_proto_rawDesc = "" +
 	"\bWEBHOOKS\x10\x05\x12\x12\n" +
 	"\x0eREFRESH_TOKENS\x10\x06\x12\x1a\n" +
 	"\x16PERSONAL_ACCESS_TOKENS\x10\aB\a\n" +
-	"\x05value\"k\n" +
+	"\x05value\"\xab\x01\n" +
 	"\x12GeneralUserSetting\x12\x16\n" +
 	"\x06locale\x18\x01 \x01(\tR\x06locale\x12'\n" +
 	"\x0fmemo_visibility\x18\x02 \x01(\tR\x0ememoVisibility\x12\x14\n" +
-	"\x05theme\x18\x03 \x01(\tR\x05theme\"\xa4\x04\n" +
+	"\x05theme\x18\x03 \x01(\tR\x05theme\x12\x1f\n" +
+	"\vtheme_light\x18\x04 \x01(\tR\n" +
+	"themeLight\x12\x1d\n" +
+	"\n" +
+	"theme_dark\x18\x05 \x01(\tR\tthemeDark\"\xa4\x04\n" +
 	"\x18RefreshTokensUserSetting\x12Y\n" +
 	"\x0erefresh_tokens\x18\x01 \x03(\v22.memos.store.RefreshTokensUserSetting.RefreshTokenR\rrefreshTokens\x1a\x94\x02\n" +
 	"\fRefreshToken\x12\x19\n" +
